@@ -10,6 +10,7 @@ import (
 	"github.com/go-chassis/go-chassis/core/invocation"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -45,13 +46,19 @@ func New(opts client.Options) (client.ProtocolClient, error) {
 func newClientConn(opts client.Options) (*grpc.ClientConn, error) {
 	var conn *grpc.ClientConn
 	var err error
+	var kacp = keepalive.ClientParameters{
+		Time:                10 * time.Second, // send pings every 10 seconds if there is no activity
+		Timeout:             time.Second,      // wait 1 second for ping ack before considering the connection dead
+		PermitWithoutStream: true,             // send pings even without active streams
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
 	defer cancel()
 	if opts.TLSConfig == nil {
-		conn, err = grpc.DialContext(ctx, opts.Endpoint, grpc.WithInsecure())
+		conn, err = grpc.DialContext(ctx, opts.Endpoint, grpc.WithInsecure(), grpc.WithKeepaliveParams(kacp))
 	} else {
 		conn, err = grpc.DialContext(ctx, opts.Endpoint,
-			grpc.WithTransportCredentials(credentials.NewTLS(opts.TLSConfig)))
+			grpc.WithTransportCredentials(credentials.NewTLS(opts.TLSConfig)),
+			grpc.WithKeepaliveParams(kacp))
 	}
 	return conn, err
 }
