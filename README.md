@@ -16,7 +16,7 @@ import _ "github.com/go-chassis/go-chassis-protocol/server/grpc"
 cse:
   service:
     registry:
-      address: http://127.0.0.1:30100 # If type is File then address will be the path of the file
+      address: http://127.0.0.1:30100
   protocols:
     grpc:
       listenAddress: 127.0.0.1:5000
